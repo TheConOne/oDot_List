@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">oDot_List</string>
+
+    <string name="title_activity_fullscreen">FullscreenActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+
+    <string name="emoticon_button">:-)</string>
+    <string name="space_button">Space</string>
+    <string name="delete_button">Del</string>
+    <string name="add_button">Add</string>
+    <string name="action_clear">Clear</string>
+    <string name="effect_felt_pen">Felt pen</string>
+    <string name="effect_fountain_pen">Fountain pen</string>
+    <string name="effect_calligraphic_brush">Calligraphic brush</string>
+    <string name="effect_calligraphic_quill">Calligraphic quill</string>
+    <string name="effect_qalam">Qalam</string>
+</resources>
