@@ -4,6 +4,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.gesture.Gesture;
+import android.gesture.GestureLibraries;
+import android.gesture.GestureLibrary;
+import android.gesture.GestureOverlayView;
+import android.gesture.Prediction;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.support.v7.app.AlertDialog;
@@ -12,8 +17,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
@@ -41,12 +48,17 @@ public class MainActivity extends AppCompatActivity implements
         SingleCharWidgetApi.OnLongPressGestureListener,
         SingleCharWidgetApi.OnBackspaceGestureListener,
         SingleCharWidgetApi.OnReturnGestureListener,
-        CustomEditText.OnSelectionChanged
+        CustomEditText.OnSelectionChanged,
+        GestureOverlayView.OnGesturePerformedListener
 {
 
     DBHelper DBHelper;
     ArrayAdapter<String> mAdapter;
     ListView lstTask;
+
+    //Gesture stuff
+    int selectedIndex = -1;
+    private GestureLibrary gestureLib;
 
     private static final String TAG = "MainActivity";
 
@@ -69,8 +81,49 @@ public class MainActivity extends AppCompatActivity implements
 
         loadTaskList();
         //~~~
+
+        //Gestures introduced here
+        //-------------------------------------------------
+
+
     }
 
+    long time;
+    boolean firstTouch = false;
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if(event.getAction() == event.ACTION_DOWN){
+            if(firstTouch && (System.currentTimeMillis() - time) <= 300) {
+                //do stuff here for double tap
+                CallGesture();
+                Log.e("** DOUBLE TAP**"," second tap ");
+                firstTouch = false;
+
+            } else {
+                firstTouch = true;
+                time = System.currentTimeMillis();
+                Log.e("** SINGLE  TAP**"," First Tap time  "+time);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected void CallGesture(){
+        setContentView(R.layout.gesture_layout);
+        GestureOverlayView gestureOverlayView = new GestureOverlayView(this);
+        // Here we are adding gestureOverlay to or UI
+        View inflate = getLayoutInflater().inflate(R.layout.gesture_layout, null);
+        gestureOverlayView.addView(inflate);
+        gestureOverlayView.addOnGesturePerformedListener(this);
+
+        // Initialise gesture lib
+        gestureLib = GestureLibraries.fromRawResource(this, R.raw.gestures);
+        if (!gestureLib.load()) {
+            finish();
+        }
+        setContentView(gestureOverlayView);
+    }
 
     protected void CallAPI(){
         setContentView(R.layout.add_new_task);
@@ -513,6 +566,55 @@ public class MainActivity extends AppCompatActivity implements
         String task = String.valueOf(taskTextView.getText());
         DBHelper.deleteTask(task);
         loadTaskList();
+    }
+
+    //Gesture stuff
+    //```````````````````````````````````````````````````````````````````````
+    @Override
+    public void onGesturePerformed(GestureOverlayView overlay, Gesture gesture) {
+        ArrayList<Prediction> predictions = gestureLib.recognize(gesture);
+        for (Prediction prediction : predictions) {
+            if (prediction.score > 3.0) {
+                //    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT)
+                //          .show();
+                if (prediction.name.equals("Add")) {
+                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
+                    CallAPI();
+                }
+                else if (prediction.name.equals("Delete")) {
+                    Toast.makeText(this, prediction.name+" All : "+prediction.score, Toast.LENGTH_SHORT).show();
+                    DBHelper.deleteAll();
+                    startActivity(new Intent(MainActivity.this, MainActivity.class));
+                }
+                else if (prediction.name.equals("Create")) {
+                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
+                    CallAPI();
+                }
+                else if (prediction.name.equals("Show")) {
+
+                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(MainActivity.this, MainActivity.class));
+                    // }
+                }
+            }
+        }
+    }
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        selectedIndex = info.position;
+
+        return true;
+    }
+
+
+    public void showMsg(String title, String msg) {
+        android.app.AlertDialog.Builder build = new android.app.AlertDialog.Builder(this);
+        build.setCancelable(true);
+        build.setTitle(title);
+        build.setMessage(msg);
+        build.show();
+
     }
 
 }
