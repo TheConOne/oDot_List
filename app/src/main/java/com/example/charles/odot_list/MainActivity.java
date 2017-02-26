@@ -167,6 +167,16 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
+    public void onCancelButtonClick(View v){
+        mWidget.clear();
+        //go back to main page
+        startActivity(new Intent(MainActivity.this, MainActivity.class));
+    }
+
+    public void onNewTaskClick(View v){
+        CallAPI();
+    }
+
 
     @Override
     public void onSelectionChanged(EditText editText, int selStart, int selEnd) {

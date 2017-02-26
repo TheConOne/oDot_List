@@ -118,26 +118,37 @@
             />
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="56dp"
             android:layout_height="wrap_content"
             android:text="@string/delete_button"
             android:textSize="20sp"
             android:textColor="#000000"
             android:onClick="onDeleteButtonClick"
-            />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/add_button"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:onClick="onAddButtonClick"
-            android:layout_above="@+id/buttons"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true" />
+            android:layout_weight="0.17" />
 
     </LinearLayout>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/add_button"
+        android:textSize="20sp"
+        android:textColor="#000000"
+        android:onClick="onAddButtonClick"
+        android:layout_above="@+id/buttons"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CANCEL"
+        android:textSize="20sp"
+        android:textColor="#000000"
+        android:onClick="onCancelButtonClick"
+        android:layout_above="@+id/buttons"
+        android:layout_toRightOf="@+id/candidatePanel"
+        android:layout_toEndOf="@+id/candidatePanel" />
 
 </RelativeLayout>
