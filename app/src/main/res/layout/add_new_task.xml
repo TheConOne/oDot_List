@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     >
@@ -76,7 +77,18 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#f0f0f0"
-        />
+        >
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="228dp"
+            android:paddingLeft="145dp"
+            android:paddingRight="145dp"
+            android:paddingTop="120dp"
+            android:text="Do Handwriting Here!"
+            android:textAlignment="center" />
+    </com.myscript.atk.scw.SingleCharWidget>
 
     <GridView
         android:id="@+id/candidatePanel"
@@ -120,7 +132,7 @@
         <Button
             android:layout_width="56dp"
             android:layout_height="wrap_content"
-            android:text="@string/delete_button"
+            android:text="BKSP"
             android:textSize="20sp"
             android:textColor="#000000"
             android:onClick="onDeleteButtonClick"
@@ -129,26 +141,24 @@
     </LinearLayout>
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/add_button"
-        android:textSize="20sp"
-        android:textColor="#000000"
-        android:onClick="onAddButtonClick"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:layout_above="@+id/buttons"
+        android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_weight="1"
+        android:background="@android:drawable/ic_input_add"
+        android:onClick="onAddButtonClick" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="CANCEL"
-        android:textSize="20sp"
-        android:textColor="#000000"
-        android:onClick="onCancelButtonClick"
-        android:layout_above="@+id/buttons"
-        android:layout_toRightOf="@+id/candidatePanel"
-        android:layout_toEndOf="@+id/candidatePanel" />
+    <!--<Button-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="CANCEL"-->
+        <!--android:textSize="20sp"-->
+        <!--android:textColor="#000000"-->
+        <!--android:onClick="onCancelButtonClick"-->
+        <!--android:layout_above="@+id/buttons"-->
+        <!--android:layout_toRightOf="@+id/candidatePanel"-->
+        <!--android:layout_toEndOf="@+id/candidatePanel" />-->
 
 </RelativeLayout>

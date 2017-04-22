@@ -11,7 +11,7 @@ import android.text.InputType;
 import android.util.AttributeSet;
 import android.widget.EditText;
 
-public class CustomEditText extends EditText {
+public class CustomEditText extends android.support.v7.widget.AppCompatEditText {
 
     private int mLastSelectionStart;
     private int mLastSelectionEnd;

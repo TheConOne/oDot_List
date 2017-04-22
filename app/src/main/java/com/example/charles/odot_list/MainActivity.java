@@ -3,14 +3,18 @@ package com.example.charles.odot_list;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.gesture.Gesture;
 import android.gesture.GestureLibraries;
 import android.gesture.GestureLibrary;
 import android.gesture.GestureOverlayView;
 import android.gesture.Prediction;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Process;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -20,6 +24,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
@@ -51,7 +56,6 @@ public class MainActivity extends AppCompatActivity implements
         CustomEditText.OnSelectionChanged,
         GestureOverlayView.OnGesturePerformedListener
 {
-
     DBHelper DBHelper;
     ArrayAdapter<String> mAdapter;
     ListView lstTask;
@@ -68,11 +72,27 @@ public class MainActivity extends AppCompatActivity implements
     private GridView mCandidatePanel;
     private SingleCharWidgetApi  mWidget;
 
+    private boolean doubleBackToExitPressedOnce;
+    private Handler mHandler = new Handler();
+    boolean isInAPI = false;
+    boolean isInGesture = false;
+    boolean isInHome = true;
+    boolean hasTutorialOccur;
+    private final Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            doubleBackToExitPressedOnce = false;
+        }
+    };
+
+    long time;
+    boolean firstTouch = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         //DB stuff ~~~
+        Toast.makeText(this, "Double Tap for Gesture Listener", Toast.LENGTH_SHORT).show();
         setContentView(R.layout.activity_main);
 
         DBHelper = new DBHelper(this);
@@ -81,15 +101,48 @@ public class MainActivity extends AppCompatActivity implements
 
         loadTaskList();
         //~~~
-
-        //Gestures introduced here
-        //-------------------------------------------------
-
-
     }
 
-    long time;
-    boolean firstTouch = false;
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+//            MainActivity.super.onBackPressed();
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
+            return;
+        }
+        else if(isInHome)
+        {
+            this.doubleBackToExitPressedOnce = true;
+            Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+
+            mHandler.postDelayed(mRunnable, 2000);
+        }
+        else if(isInAPI)
+        {
+            startActivity(new Intent(MainActivity.this, MainActivity.class));
+            isInHome = true;
+            isInAPI = false;
+            isInGesture = false;
+            super.onBackPressed();
+        }
+        else
+        {
+            startActivity(new Intent(MainActivity.this, MainActivity.class));
+            isInHome = true;
+            isInAPI = false;
+            isInGesture = false;
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mWidget.dispose();
+        if (mHandler != null) { mHandler.removeCallbacks(mRunnable); }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if(event.getAction() == event.ACTION_DOWN){
@@ -110,9 +163,13 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     protected void CallGesture(){
+        isInGesture = true;
+        isInAPI = false;
+        isInHome = false;
+
         setContentView(R.layout.gesture_layout);
         GestureOverlayView gestureOverlayView = new GestureOverlayView(this);
-        // Here we are adding gestureOverlay to or UI
+        // Here we are adding gestureOverlay to our UI
         View inflate = getLayoutInflater().inflate(R.layout.gesture_layout, null);
         gestureOverlayView.addView(inflate);
         gestureOverlayView.addOnGesturePerformedListener(this);
@@ -126,6 +183,10 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     protected void CallAPI(){
+        isInAPI = true;
+        isInHome = false;
+        isInGesture = false;
+
         setContentView(R.layout.add_new_task);
 
         mCandidateAdapter = new CandidateAdapter(this);
@@ -164,12 +225,6 @@ public class MainActivity extends AppCompatActivity implements
 
         mWidget.addSearchDir("zip://" + getPackageCodePath() + "!/assets/conf");
         mWidget.configure("en_US", "si_text");
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mWidget.dispose();
     }
 
     //--------------------------------------------------------------------------------
@@ -212,11 +267,17 @@ public class MainActivity extends AppCompatActivity implements
 
     public void onAddButtonClick(View v){
         String task = String.valueOf(mTextField.getText());
-        DBHelper.insertNewTask(task);
-        loadTaskList();
-        mWidget.clear();
+        if(task.compareTo("") != 0) {
+            DBHelper.insertNewTask(task);
+            loadTaskList();
+            mWidget.clear();
+        }
         //go back to main page
         startActivity(new Intent(MainActivity.this, MainActivity.class));
+        isInHome = true;
+        isInAPI = false;
+        isInGesture = false;
+        MainActivity.super.onBackPressed();
     }
 
 
@@ -224,6 +285,10 @@ public class MainActivity extends AppCompatActivity implements
         mWidget.clear();
         //go back to main page
         startActivity(new Intent(MainActivity.this, MainActivity.class));
+        isInHome = true;
+        isInAPI = false;
+        isInGesture = false;
+        MainActivity.super.onBackPressed();
     }
 
     public void onNewTaskClick(View v){
@@ -517,47 +582,30 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu,menu);
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        getMenuInflater().inflate(R.menu.menu,menu);
+//
+//        //Change menu icon color
+//        Drawable icon = menu.getItem(0).getIcon();
+//        icon.mutate();
+//        icon.setColorFilter(getResources().getColor(android.R.color.white), PorterDuff.Mode.SRC_IN);
+//
+//        return super.onCreateOptionsMenu(menu);
+//    }
 
-        //Change menu icon color
-        Drawable icon = menu.getItem(0).getIcon();
-        icon.mutate();
-        icon.setColorFilter(getResources().getColor(android.R.color.white), PorterDuff.Mode.SRC_IN);
-
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case R.id.action_add_task:
-                final CustomEditText taskEditText = new CustomEditText(this);
-                //API stuff~~~~~
-                CallAPI();
-                //~~~~
-                /*
-                AlertDialog dialog = new AlertDialog.Builder(this)
-                        .setTitle("Add New Task")
-                        .setMessage("What do you want to do next?")
-                        .setView(taskEditText)
-                        .setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                String task = String.valueOf(taskEditText.getText());
-                                DBHelper.insertNewTask(task);
-                                loadTaskList();
-                            }
-                        })
-                        .setNegativeButton("Cancel",null)
-                        .create();
-                dialog.show();
-                */
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        switch (item.getItemId()){
+//            case R.id.action_add_task:
+//                final CustomEditText taskEditText = new CustomEditText(this);
+//                //API stuff~~~~~
+//                CallAPI();
+//                Toast.makeText(this, "This be the thing", Toast.LENGTH_SHORT).show();
+//                return true;
+//        }
+//        return super.onOptionsItemSelected(item);
+//    }
 
     public void deleteTask(View view){
         View parent = (View)view.getParent();
@@ -574,31 +622,45 @@ public class MainActivity extends AppCompatActivity implements
     public void onGesturePerformed(GestureOverlayView overlay, Gesture gesture) {
         ArrayList<Prediction> predictions = gestureLib.recognize(gesture);
         for (Prediction prediction : predictions) {
-            if (prediction.score > 3.0) {
-                //    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT)
-                //          .show();
-                if (prediction.name.equals("Add")) {
-                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
+//            Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
+            if (prediction.name.equals("Add")) {
+                if (prediction.score > 3.0) {
+//                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
                     CallAPI();
                 }
-                else if (prediction.name.equals("Delete")) {
-                    Toast.makeText(this, prediction.name+" All : "+prediction.score, Toast.LENGTH_SHORT).show();
-                    DBHelper.deleteAll();
+            }
+            else if (prediction.name.equals("Create")) {
+                if (prediction.score > 3.0) {
+//                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
+                    CallAPI();
+                }
+            }
+            else if (prediction.name.equals("Show")) {
+                if (prediction.score > 2.0) {
+//                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(MainActivity.this, MainActivity.class));
+                    isInHome = true;
+                    isInAPI = false;
+                    isInGesture = false;
+                    android.os.Process.killProcess(android.os.Process.myPid());
                 }
-                else if (prediction.name.equals("Create")) {
-                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
-                    CallAPI();
-                }
-                else if (prediction.name.equals("Show")) {
+            }
+            else if (prediction.name.equals("Delete")) {
+                if (prediction.score > 1.5){
+//                    Toast.makeText(this, prediction.name+" All : "+prediction.score, Toast.LENGTH_SHORT).show();
+                        DBHelper.deleteAll();
 
-                    Toast.makeText(this, prediction.name+" : "+prediction.score, Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(MainActivity.this, MainActivity.class));
-                    // }
+                        startActivity(new Intent(MainActivity.this, MainActivity.class));
+                        isInHome = true;
+                        isInAPI = false;
+                        isInGesture = false;
+                        android.os.Process.killProcess(android.os.Process.myPid());
                 }
             }
         }
     }
+
+
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
